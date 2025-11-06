@@ -4,68 +4,101 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Limie • Quotes & Music</title>
-  <meta name="description" content="Quét QR → hiển thị 1 câu quote giữa nền ảnh → sau 5 giây hiện nút Bật nhạc (1 bài, phát từ jsDelivr)." />
+  <meta name="description" content="Hiển thị 1 câu quote giữa nền ảnh Limie và phát 1 bài nhạc khi bấm nút sau 5 giây." />
   <style>
-    :root {
-      --text: #010201;            /* Màu chữ yêu cầu */
-      --btnbg: #ffd24d;           /* Vàng chanh Limie */
-      --btnfg: #0f172a;           /* Chữ trên nút */
-      --btnbg-hover: #fec84b;
+    :root{
+      --text: #010201;        /* MÀU CHỮ THEO YÊU CẦU */
+      --btnbg: #ffd24d;       /* vàng chanh */
+      --btnbg-hover: #fec84b; /* hover */
+      --btnfg: #0f172a;
+      --maxw: 680px;          /* bề rộng tối đa vùng quote */
     }
 
     html, body { height: 100%; }
-    body {
-      margin: 0;
+    body{
+      margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       color: var(--text);
-      /* 👉 THAY ảnh nền: đặt file .jpg của bạn cùng thư mục và đổi tên ở dưới */
-      background: url('backgr.jpg') center center / cover no-repeat fixed;
+      /* 👉 ĐỔI tên file ảnh cho khớp (để ảnh .jpg cùng thư mục với index.html) */
+      background: url('limie-bg.jpg') center top / cover no-repeat;
+      /* tránh giật trên mobile; bật fixed cho màn to ở dưới */
+    }
+    @media (min-width: 768px){
+      body{ background-attachment: fixed; }
     }
 
-    /* Lớp phủ rất nhẹ để chữ nổi hơn trên nền sáng (có thể xóa nếu không cần) */
-    .scrim { background: rgba(255,255,255,0.02); min-height: 100vh; display: grid; place-items: center; padding: 20px; }
-
-    .wrap { width: 100%; max-width: 880px; text-align: center; }
-
-    #quote {
-      font-weight: 600; line-height: 1.6; text-wrap: balance;
-      font-size: clamp(18px, 3.4vw, 28px);
-      /* Nếu nền quá rực, có thể bật shadow siêu nhẹ để tăng tương phản */
-      /* text-shadow: 0 1px 0 rgba(255,255,255,0.7); */
+    /* Lớp bố cục chung */
+    .stage{
+      min-height: 100svh;                          /* chiều cao màn hình mobile chuẩn */
+      display: grid;
+      place-items: start center;                    /* đặt nội dung theo chiều dọc từ trên xuống */
+      padding: 16px;
     }
 
-    .fade { opacity: 0; transform: translateY(6px); transition: opacity .35s ease, transform .35s ease; }
-    .fade.show { opacity: 1; transform: translateY(0); }
-
-    #playBtn {
-      margin-top: 18px; border: 0; cursor: pointer; border-radius: 999px;
-      background: var(--btnbg); color: var(--btnfg); font-weight: 800; letter-spacing: .2px;
-      padding: 12px 18px; display: inline-flex; align-items: center; gap: 8px; font-size: 16px;
+    /* Khối nội dung chính */
+    .wrap{
+      width: 100%;
+      max-width: var(--maxw);
+      text-align: center;
+      /* VÙNG AN TOÀN đẩy nội dung xuống dưới logo của ảnh nền */
+      margin-top: clamp(120px, 22vh, 260px);
     }
-    #playBtn:hover { background: var(--btnbg-hover); }
 
-    .credit { margin-top: 10px; font-size: 12px; opacity: .7; }
+    /* Quote */
+    #quote{
+      font-weight: 600;
+      line-height: 1.6;
+      font-size: clamp(18px, 3.6vw, 28px);
+      color: var(--text);
+      text-wrap: balance;
+      margin: 0 auto;
+    }
+
+    /* Hiệu ứng hiện dần */
+    .fade{ opacity: 0; transform: translateY(6px); transition: opacity .35s ease, transform .35s ease; }
+    .fade.show{ opacity: 1; transform: translateY(0); }
+
+    /* Nút bật nhạc */
+    #playBtn{
+      margin-top: 18px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: var(--btnbg);
+      color: var(--btnfg);
+      font-weight: 800;
+      letter-spacing: .2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #playBtn:hover{ background: var(--btnbg-hover); }
+
+    .hint{ margin-top: 8px; font-size: 12px; opacity: .6; }
   </style>
 </head>
 <body>
-  <div class="scrim">
+  <div class="stage">
     <main class="wrap" role="main" aria-live="polite">
       <div id="quote" class="fade">Đang chọn câu truyền cảm hứng…</div>
-      <button id="playBtn" class="fade" aria-label="Bật nhạc" style="display:inline-flex">🎵 Bật nhạc</button>
-      <div class="credit">(Nút sẽ xuất hiện sau 5 giây)</div>
+      <button id="playBtn" class="fade" aria-label="Bật nhạc">🎵 Bật nhạc</button>
+      <div class="hint">(Nút sẽ xuất hiện sau 5 giây)</div>
     </main>
   </div>
 
   <script>
-    // ===== CẤU HÌNH =====
-    // Ảnh nền: đổi tên file ở CSS: body{ background: url('background.jpg') ... }
+    /* ================== CẤU HÌNH ================== */
+    // 1 bài nhạc duy nhất – jsDelivr từ GitHub
+    const AUDIO_SRC = "https://cdn.jsdelivr.net/gh/tenshi-cloud/limie@main/Ahead%20of%20Us.mp3";
 
-    // Danh sách QUOTES (theo thứ tự bạn gửi). Mỗi lần mở sẽ chọn ngẫu nhiên 1 câu.
+    // Danh sách QUOTES (màu #010201 đã set trong CSS)
     const QUOTES = [
       "one day, you'll be so proud of yourself because you finally passed your hardest moments and all your hard work paid off. you won't feel useless, lonely, or lost anymore",
       "Vạn vật đều có vết nứt, đó là nơi ánh sáng chiếu vào",
-      "Success is not final, failure is not fatal: it is the courage to continue that counts",
-      "You define your own life. Don't let other people write your script",
+      "Success is not final, failure is not fatal: it is the courage to continue that counts - Winston Churchill",
+      "You define your own life. Don't let other people write your script - Oprah Winfrey",
       "Healing is not becoming the best version of yourself, healing is letting the worst version of yourself be loved",
       "Không có con đường nào dẫn tới hạnh phúc, mà hạnh phúc chính là con đường",
       "Và khi cơn bão qua đi, bạn sẽ không nhớ là bạn đã vượt qua như thế nào, bạn xoay sở để tồn tại được ra sao, bạn thậm chí cũng không dám chắc thật ra cơn bão có thật sự đi qua. Nhưng mà có một điều chắc chắn, khi bạn bước qua khỏi cơn bão, bạn sẽ không còn là con người đã bước vào đó nữa.",
@@ -73,51 +106,54 @@
       "one day or day one"
     ];
 
-    // Chỉ 1 bài nhạc (jsDelivr từ GitHub). Thay link này nếu bạn đổi bài.
-    const AUDIO_SRC = "https://cdn.jsdelivr.net/gh/tenshi-cloud/limie@main/Ahead%20of%20Us.mp3";
-
-    // Tham số URL: ?delay=5 để đổi thời gian chờ (giây) trước khi hiện nút nhạc
+    // Tham số URL: ?delay=8 để đổi thời gian trước khi hiện nút
     const params = new URLSearchParams(location.search);
     const DELAY = Math.max(0, parseInt(params.get('delay') || '5', 10));
 
-    // ===== LOGIC =====
+    /* ================== LOGIC ================== */
     const $q = document.getElementById('quote');
     const $btn = document.getElementById('playBtn');
 
-    // Chọn ngẫu nhiên 1 câu, tránh trùng lần gần nhất
-    function pickRandomIndex(len){ return Math.floor(Math.random() * len); }
+    // Chọn ngẫu nhiên 1 quote, tránh trùng lần gần nhất
+    function r(len){ return Math.floor(Math.random() * len); }
     const last = parseInt(localStorage.getItem('limie_last_quote') || '-1', 10);
-    let idx = pickRandomIndex(QUOTES.length);
+    let idx = r(QUOTES.length);
     if (QUOTES.length > 1 && idx === last) idx = (idx + 1) % QUOTES.length;
     localStorage.setItem('limie_last_quote', String(idx));
 
-    // Hiển thị quote ở giữa nền
     $q.textContent = QUOTES[idx];
-    $q.classList.add('show');
+    requestAnimationFrame(()=> $q.classList.add('show'));
 
-    // Sau DELAY giây mới hiện nút "Bật nhạc"
+    // Sau DELAY giây mới hiện nút nhạc
     setTimeout(() => { $btn.classList.add('show'); }, DELAY * 1000);
 
-    // Chuẩn bị player (mobile cần thao tác người dùng mới cho phép âm thanh)
+    // Player (yêu cầu người dùng bấm để đảm bảo phát trên iOS)
     const audio = new Audio(AUDIO_SRC);
     audio.preload = 'auto';
-    audio.loop = false; // đổi true nếu muốn lặp
+    audio.loop = false;
 
-    // Khi bấm nút → phát nhạc + đổi text nút thành Tạm dừng / Bật nhạc (toggle)
     let playing = false;
     $btn.addEventListener('click', async () => {
-      try {
-        if (!playing) {
-          audio.volume = 0;              // fade-in nhẹ
+      try{
+        if(!playing){
+          audio.volume = 0;
           await audio.play();
-          playing = true; $btn.textContent = '⏸ Tạm dừng';
-          let v = 0; const fade = setInterval(()=>{ v+=0.1; audio.volume=Math.min(1,v); if(v>=1) clearInterval(fade); }, 70);
-        } else {
-          audio.pause(); playing = false; $btn.textContent = '🎵 Bật nhạc';
+          playing = true;
+          $btn.textContent = "⏸ Tạm dừng";
+          // fade-in âm lượng
+          let v = 0;
+          const fade = setInterval(() => {
+            v += 0.1; audio.volume = Math.min(v, 1);
+            if (v >= 1) clearInterval(fade);
+          }, 80);
+        }else{
+          audio.pause();
+          playing = false;
+          $btn.textContent = "🎵 Bật nhạc";
         }
-      } catch (e) {
-        console.error(e);
-        alert('Thiết bị đang chặn phát nhạc. Hãy chạm lại để cho phép nhé!');
+      }catch(e){
+        console.warn("Autoplay bị chặn, cần thao tác chạm của người dùng.", e);
+        alert("Thiết bị đang chặn phát nhạc. Hãy chạm lại để bật nhé!");
       }
     });
   </script>
